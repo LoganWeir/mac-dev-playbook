@@ -1,0 +1,109 @@
+---
+# Configure Python and Node.js version management
+
+# Python setup with pyenv
+- name: Check if pyenv is initialized in shell config
+  shell: grep -q 'pyenv init' ~/.zshrc || grep -q 'pyenv init' ~/.bash_profile
+  register: pyenv_initialized
+  changed_when: false
+  failed_when: false
+
+- name: Initialize pyenv in zsh
+  blockinfile:
+    path: "{{ ansible_env.HOME }}/.zshrc"
+    create: yes
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - pyenv"
+    block: |
+      export PYENV_ROOT="$HOME/.pyenv"
+      command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+      eval "$(pyenv init -)"
+  when: not pyenv_initialized.rc == 0
+
+- name: Check if Python 3.14 is installed
+  shell: |
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    pyenv versions | grep -q '3.14'
+  register: python314_installed
+  changed_when: false
+  failed_when: false
+
+- name: Install Python 3.14 with pyenv
+  shell: |
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    pyenv install 3.14
+  when: python314_installed.rc != 0
+  register: python_install_result
+  failed_when:
+    - python_install_result.rc != 0
+    - '"already exists" not in python_install_result.stderr'
+
+- name: Set Python 3.14 as global default
+  shell: |
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    pyenv global 3.14
+  when: python314_installed.rc != 0 or python_install_result is changed
+
+# Node.js setup with fnm
+- name: Check if fnm is initialized in shell config
+  shell: grep -q 'fnm env' ~/.zshrc || grep -q 'fnm env' ~/.bash_profile
+  register: fnm_initialized
+  changed_when: false
+  failed_when: false
+
+- name: Initialize fnm in zsh
+  blockinfile:
+    path: "{{ ansible_env.HOME }}/.zshrc"
+    create: yes
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - fnm"
+    block: |
+      # Fast Node Manager
+      eval "$(fnm env --use-on-cd)"
+  when: not fnm_initialized.rc == 0
+
+- name: Check if Node 24 is installed
+  shell: |
+    eval "$(fnm env)"
+    fnm list | grep -q 'v24'
+  register: node24_installed
+  changed_when: false
+  failed_when: false
+
+- name: Install Node 24 with fnm
+  shell: |
+    eval "$(fnm env)"
+    fnm install 24
+  when: node24_installed.rc != 0
+  register: node_install_result
+
+- name: Set Node 24 as default
+  shell: |
+    eval "$(fnm env)"
+    fnm default 24
+  when: node24_installed.rc != 0 or node_install_result is changed
+
+- name: Create fnm aliases for common commands
+  shell: |
+    eval "$(fnm env)"
+    fnm alias default 24
+  when: node24_installed.rc != 0 or node_install_result is changed
+
+- name: Install Claude Code CLI globally via npm
+  shell: |
+    eval "$(fnm env)"
+    npm install -g @anthropic-ai/claude-code
+  register: claude_code_install
+  changed_when: claude_code_install.rc == 0
+
+- name: Display language setup status
+  debug:
+    msg: |
+      Language runtime setup complete:
+      - Python 3.14 installed via pyenv and set as global
+      - Node 24 installed via fnm and set as default
+      - Claude Code CLI installed globally
+
+      To use these in a new shell, restart your terminal or run:
+        source ~/.zshrc

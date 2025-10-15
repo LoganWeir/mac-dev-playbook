@@ -1,0 +1,19 @@
+---
+# Clear all dock items (except Finder and Trash which cannot be removed)
+- name: Get list of all current dock items
+  command: dockutil --list
+  register: dock_items
+  changed_when: false
+  when: dockitems_remove_all | default(false)
+
+- name: Remove all dock items
+  command: "dockutil --remove all --no-restart"
+  when:
+    - dockitems_remove_all | default(false)
+    - dock_items.stdout_lines | length > 2  # Keep only if more than Finder and Trash
+  changed_when: true
+
+- name: Restart Dock to apply changes
+  command: killall Dock
+  when: dockitems_remove_all | default(false)
+  changed_when: true

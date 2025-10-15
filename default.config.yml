@@ -3,13 +3,40 @@ configure_dotfiles: true
 configure_terminal: true
 configure_osx: true
 
+# macOS trackpad settings
+osx_natural_scrolling: false  # Set to true for Apple's default "natural" scrolling
+osx_force_click: false  # Force click and haptic feedback
+osx_lookup_data_detectors: false  # Three finger tap for lookup & data detectors
+osx_tap_to_click: true  # Tap to click
+osx_two_finger_right_click: true  # Secondary click with two fingers
+
 # Set to 'true' to configure the Dock via dockutil.
 configure_dock: false
+# To completely clear the dock, set configure_dock to true and uncomment dockitems_remove_all
+dockitems_remove_all: false  # Set to true to remove all dock items (except Finder and Trash)
 dockitems_remove: []
+# Common default macOS apps to remove:
 # - Launchpad
+# - Safari
+# - Messages
+# - Mail
+# - Maps
+# - Photos
+# - FaceTime
+# - Calendar
+# - Contacts
+# - Reminders
+# - Notes
 # - TV
+# - Music
 # - Podcasts
+# - News
+# - Keynote
+# - Numbers
+# - Pages
 # - 'App Store'
+# - 'System Preferences'
+# - 'System Settings'
 dockitems_persist: []
 # - name: "Sublime Text"
 #   path: "/Applications/Sublime Text.app/"
@@ -41,7 +68,6 @@ homebrew_installed_packages:
   - gettext
   - gifsicle
   - git
-  - gh
   - go
   - gpg
   - httpie
@@ -49,8 +75,6 @@ homebrew_installed_packages:
   - libevent
   - sqlite
   - nmap
-  - node
-  - nvm
   - php
   - pngpaste
   - ssh-copy-id

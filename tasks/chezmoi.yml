@@ -1,0 +1,39 @@
+---
+# Configure chezmoi for dotfiles management
+- name: Check if chezmoi is already initialized
+  stat:
+    path: "{{ ansible_env.HOME }}/.local/share/chezmoi"
+  register: chezmoi_initialized
+
+- name: Check if git credentials are configured
+  command: git config --global user.email
+  register: git_email
+  changed_when: false
+  failed_when: false
+
+- name: Initialize chezmoi with dotfiles repository
+  command: chezmoi init --apply https://github.com/LoganWeir/dotfiles.git
+  when:
+    - not chezmoi_initialized.stat.exists
+    - git_email.rc == 0  # Only run if git is configured
+  register: chezmoi_init_result
+  failed_when: chezmoi_init_result.rc != 0 and "already exists" not in chezmoi_init_result.stderr
+
+- name: Display chezmoi initialization status
+  debug:
+    msg: |
+      {% if chezmoi_initialized.stat.exists %}
+      Chezmoi is already initialized. Run 'chezmoi update' to sync latest changes.
+      {% elif git_email.rc != 0 %}
+      Chezmoi was installed but NOT initialized because Git is not configured.
+      Please configure Git first (see README) then run: chezmoi init --apply https://github.com/LoganWeir/dotfiles.git
+      {% else %}
+      Chezmoi has been initialized with your dotfiles repository.
+      {% endif %}
+
+- name: Show chezmoi status
+  command: chezmoi status
+  register: chezmoi_status
+  changed_when: false
+  failed_when: false
+  when: chezmoi_initialized.stat.exists or (chezmoi_init_result is defined and chezmoi_init_result.rc == 0)

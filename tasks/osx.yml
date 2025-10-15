@@ -3,3 +3,35 @@
 - name: Run .osx dotfiles.
   command: "{{ osx_script }}"
   changed_when: false
+
+# Trackpad settings
+- name: Configure trackpad scroll direction
+  command: defaults write NSGlobalDomain com.apple.swipescrolldirection -bool {{ osx_natural_scrolling | lower }}
+  changed_when: true
+
+- name: Configure force click and haptic feedback
+  command: |
+    defaults write com.apple.AppleMultitouchTrackpad ForceSuppressed -bool {{ (not osx_force_click) | lower }}
+    defaults write com.apple.AppleMultitouchTrackpad ActuateDetents -bool {{ osx_force_click | lower }}
+    defaults write com.apple.preference.trackpad ForceClickSavedState -bool {{ osx_force_click | lower }}
+  changed_when: true
+
+- name: Configure lookup & data detectors (three finger tap)
+  command: defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerTapGesture -int {{ '2' if osx_lookup_data_detectors else '0' }}
+  changed_when: true
+
+- name: Configure tap to click
+  command: |
+    defaults write com.apple.AppleMultitouchTrackpad Clicking -bool {{ osx_tap_to_click | lower }}
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool {{ osx_tap_to_click | lower }}
+  changed_when: true
+
+- name: Configure secondary click (two finger right click)
+  command: |
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadRightClick -bool {{ osx_two_finger_right_click | lower }}
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool {{ osx_two_finger_right_click | lower }}
+    defaults write com.apple.AppleMultitouchTrackpad TrackpadCornerSecondaryClick -int 0
+    defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadCornerSecondaryClick -int 0
+  changed_when: true
+
+# Note: Trackpad settings may require logout/login to take full effect

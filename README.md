@@ -8,6 +8,39 @@ This playbook installs and configures most of the software I use on my Mac for w
 
 ## Installation
 
+### Pre-setup: GitHub Authentication (Required for Private Repos)
+
+If you're using chezmoi with a private dotfiles repository, you'll need to authenticate with GitHub first:
+
+```bash
+# Install Homebrew if not already installed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Add Homebrew to PATH
+# For Apple Silicon Macs (M1/M2/M3):
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# For Intel Macs (Homebrew is usually already in PATH at /usr/local/bin)
+# If brew command not found, add to ~/.zshrc:
+# export PATH="/usr/local/bin:$PATH"
+
+# Install GitHub CLI
+brew install gh
+
+# Authenticate with GitHub (follow the interactive prompts)
+gh auth login
+
+# Choose: GitHub.com -> HTTPS -> Login with web browser
+# This will handle authentication for both git and the gh CLI
+
+# Configure git with your identity
+git config --global user.name "Your Name"
+git config --global user.email "your-email@example.com"
+```
+
+### Main Installation Steps
+
   1. Ensure Apple's command line tools are installed (`xcode-select --install` to launch the installer).
   2. [Install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html):
 
@@ -116,7 +149,6 @@ Packages (installed with Homebrew):
   - gettext
   - gifsicle
   - git
-  - gh
   - go
   - gpg
   - httpie
@@ -124,9 +156,10 @@ Packages (installed with Homebrew):
   - libevent
   - sqlite
   - nmap
-  - node
-  - nvm
   - php
+  - uv (Fast Python package manager)
+  - pyenv (Python version management)
+  - fnm (Fast Node Manager)
   - ssh-copy-id
   - readline
   - openssl
@@ -137,7 +170,20 @@ Packages (installed with Homebrew):
 
 My [dotfiles](https://github.com/geerlingguy/dotfiles) are also installed into the current user's home directory, including the `.osx` dotfile for configuring many aspects of macOS for better performance and ease of use. You can disable dotfiles management by setting `configure_dotfiles: no` in your configuration.
 
+**Note:** This fork is configured to use [chezmoi](https://www.chezmoi.io/) for dotfiles management instead of the default approach. Chezmoi will be installed and automatically initialized with the repository https://github.com/LoganWeir/dotfiles.git if Git is properly configured.
+
+**Language Runtimes:** The playbook automatically configures:
+- **Python 3.14** via pyenv (set as global default)
+- **Node.js 24** via fnm (Fast Node Manager, set as default)
+- **uv** for fast Python package management
+
 Finally, there are a few other preferences and settings added on for various apps and services.
+
+## Post-Installation
+
+After running the playbook:
+
+- Import Rectangle configuration from `app_cofig_files/logan_rectangle_config.json`
 
 ## Full / From-scratch setup guide
 

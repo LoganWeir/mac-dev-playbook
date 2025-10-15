@@ -1,0 +1,33 @@
+---
+# Configure macOS screenshot settings
+- name: Ensure screenshots directory exists
+  file:
+    path: "{{ ansible_env.HOME }}/Pictures/screenshots"
+    state: directory
+    mode: '0755'
+
+- name: Get current screenshot location
+  command: defaults read com.apple.screencapture location
+  register: current_screenshot_location
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Set screenshot save location to ~/Pictures/screenshots
+  command: defaults write com.apple.screencapture location "{{ ansible_env.HOME }}/Pictures/screenshots"
+  when: current_screenshot_location.stdout != ansible_env.HOME + "/Pictures/screenshots"
+  register: screenshot_location_changed
+
+- name: Restart SystemUIServer to apply screenshot changes
+  command: killall SystemUIServer
+  when: screenshot_location_changed is changed
+
+# Optional: Additional screenshot configurations you might want
+- name: Disable shadow in screenshots (optional - uncomment to enable)
+  command: defaults write com.apple.screencapture disable-shadow -bool true
+  changed_when: false
+  tags: ['never']  # Only run when specifically requested with --tags screenshots,never
+
+- name: Set screenshot format to PNG (default, but ensures consistency)
+  command: defaults write com.apple.screencapture type -string "png"
+  changed_when: false

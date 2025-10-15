@@ -27,6 +27,10 @@
       tags: ['dock']
 
   tasks:
+    - import_tasks: tasks/dock-clear.yml
+      when: configure_dock
+      tags: ['dock']
+
     - import_tasks: tasks/sudoers.yml
       when: configure_sudoers
       tags: ['sudoers']
@@ -39,8 +43,17 @@
       when: configure_osx
       tags: ['osx']
 
+    - import_tasks: tasks/screenshots.yml
+      tags: ['screenshots', 'osx']
+
     - import_tasks: tasks/extra-packages.yml
       tags: ['extra-packages']
+
+    - import_tasks: tasks/languages.yml
+      tags: ['languages', 'python', 'node']
+
+    - import_tasks: tasks/chezmoi.yml
+      tags: ['chezmoi', 'dotfiles']
 
     - import_tasks: tasks/sublime-text.yml
       when: configure_sublime
