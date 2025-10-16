@@ -23,7 +23,6 @@ homebrew_installed_packages:
   - openvpn
 
 homebrew_cask_apps:
-  - chromedriver
   - docker
   - firefox
   - google-chrome
