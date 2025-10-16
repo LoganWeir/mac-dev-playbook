@@ -2,83 +2,83 @@
 configure_osx: true
 
 # macOS trackpad settings
-osx_natural_scrolling: false  # Set to true for Apple's default "natural" scrolling
-osx_force_click: false  # Force click and haptic feedback
-osx_lookup_data_detectors: false  # Three finger tap for lookup & data detectors
-osx_tap_to_click: true  # Tap to click
-osx_two_finger_right_click: true  # Secondary click with two fingers
+osx_natural_scrolling: false # Set to true for Apple's default "natural" scrolling
+osx_force_click: false # Force click and haptic feedback
+osx_lookup_data_detectors: false # Three finger tap for lookup & data detectors
+osx_tap_to_click: true # Tap to click
+osx_two_finger_right_click: true # Secondary click with two fingers
 
 # macOS system settings
-osx_disable_boot_sound: true  # Disable sound effects on boot
-osx_always_show_scrollbars: true  # Always show scrollbars
-osx_expand_save_panel: true  # Expand save panel by default
-osx_expand_print_panel: true  # Expand print panel by default
-osx_save_to_disk_by_default: true  # Save to disk (not iCloud) by default
-osx_quit_printer_when_finished: true  # Automatically quit printer app when done
-osx_disable_quarantine: false  # Disable "Are you sure you want to open this?" dialog (security risk!)
-osx_disable_auto_correct: true  # Disable auto-correct
-osx_disable_auto_capitalize: true  # Disable automatic capitalization
-osx_disable_smart_dashes: true  # Disable smart dashes
-osx_disable_smart_quotes: true  # Disable smart quotes
-osx_disable_auto_period: true  # Disable automatic period substitution
+osx_disable_boot_sound: true # Disable sound effects on boot
+osx_always_show_scrollbars: true # Always show scrollbars
+osx_expand_save_panel: true # Expand save panel by default
+osx_expand_print_panel: true # Expand print panel by default
+osx_save_to_disk_by_default: true # Save to disk (not iCloud) by default
+osx_quit_printer_when_finished: true # Automatically quit printer app when done
+osx_disable_quarantine: true # Disable "Are you sure you want to open this?" dialog (security risk!)
+osx_disable_auto_correct: true # Disable auto-correct
+osx_disable_auto_capitalize: true # Disable automatic capitalization
+osx_disable_smart_dashes: true # Disable smart dashes
+osx_disable_smart_quotes: true # Disable smart quotes
+osx_disable_auto_period: true # Disable automatic period substitution
 
 # macOS keyboard settings
-osx_keyboard_repeat_rate: 1  # Keyboard repeat rate (1 = fastest)
-osx_initial_key_repeat: 10  # Initial key repeat delay (10 = shortest)
+osx_keyboard_repeat_rate: 1 # Keyboard repeat rate (1 = fastest)
+osx_initial_key_repeat: 10 # Initial key repeat delay (10 = shortest)
 
 # macOS Finder settings
-osx_finder_home_default: true  # Set Home as default location for new Finder windows
-osx_finder_disable_animations: true  # Disable window animations
-osx_finder_show_all_extensions: true  # Show all filename extensions
-osx_finder_show_status_bar: true  # Show status bar
-osx_finder_show_path_bar: true  # Show path bar
-osx_finder_show_posix_path: true  # Display full POSIX path as window title
-osx_finder_folders_first: true  # Keep folders on top when sorting by name
-osx_finder_search_current_folder: true  # Search current folder by default
-osx_finder_disable_extension_warning: true  # Disable warning when changing file extension
-osx_finder_spring_loading_enabled: true  # Enable spring loading for directories
-osx_finder_spring_loading_delay: 0.5  # Spring loading delay in seconds
-osx_finder_disable_ds_store_network: true  # Avoid creating .DS_Store files on network volumes
-osx_finder_disable_ds_store_usb: true  # Avoid creating .DS_Store files on USB volumes
-osx_finder_default_view: "Nlsv"  # Default view (Nlsv=list, icnv=icon, clmv=column, glyv=gallery)
-osx_finder_show_library: true  # Show ~/Library folder
-osx_finder_show_volumes: true  # Show /Volumes folder
+osx_finder_home_default: true # Set Home as default location for new Finder windows
+osx_finder_disable_animations: true # Disable window animations
+osx_finder_show_all_extensions: true # Show all filename extensions
+osx_finder_show_status_bar: true # Show status bar
+osx_finder_show_path_bar: true # Show path bar
+osx_finder_show_posix_path: true # Display full POSIX path as window title
+osx_finder_folders_first: true # Keep folders on top when sorting by name
+osx_finder_search_current_folder: true # Search current folder by default
+osx_finder_disable_extension_warning: true # Disable warning when changing file extension
+osx_finder_spring_loading_enabled: true # Enable spring loading for directories
+osx_finder_spring_loading_delay: 0.5 # Spring loading delay in seconds
+osx_finder_disable_ds_store_network: true # Avoid creating .DS_Store files on network volumes
+osx_finder_disable_ds_store_usb: true # Avoid creating .DS_Store files on USB volumes
+osx_finder_default_view: "Nlsv" # Default view (Nlsv=list, icnv=icon, clmv=column, glyv=gallery)
+osx_finder_show_library: true # Show ~/Library folder
+osx_finder_show_volumes: true # Show /Volumes folder
 
 # macOS Dock settings
-osx_dock_tile_size: 16  # Icon size in pixels
-osx_dock_magnification: false  # Disable magnification on hover
-osx_dock_autohide: true  # Auto-hide the dock
-osx_dock_autohide_delay: 0  # Delay before dock appears
-osx_dock_autohide_time_modifier: 0  # Animation speed for showing/hiding
-osx_dock_minimize_effect: "scale"  # Minimize effect (scale or genie)
-osx_dock_show_indicators: true  # Show indicator lights for open apps
-osx_dock_launch_animation: true  # Animate opening applications
-osx_dock_expose_animation_duration: 0.1  # Mission Control animation speed
-osx_dock_show_recents: false  # Don't show recent applications
+osx_dock_tile_size: 16 # Icon size in pixels
+osx_dock_magnification: false # Disable magnification on hover
+osx_dock_autohide: true # Auto-hide the dock
+osx_dock_autohide_delay: 0 # Delay before dock appears
+osx_dock_autohide_time_modifier: 0 # Animation speed for showing/hiding
+osx_dock_minimize_effect: "scale" # Minimize effect (scale or genie)
+osx_dock_show_indicators: true # Show indicator lights for open apps
+osx_dock_launch_animation: true # Animate opening applications
+osx_dock_expose_animation_duration: 0.1 # Mission Control animation speed
+osx_dock_show_recents: false # Don't show recent applications
 
 # macOS power management settings
-osx_lid_wake: true  # Enable lid wakeup
-osx_display_sleep: 15  # Sleep display after X minutes
-osx_computer_sleep_on_power: 0  # Never sleep when plugged in (0 = never)
-osx_computer_sleep_on_battery: 5  # Sleep after X minutes on battery
-osx_standby_delay: 10800  # Standby delay in seconds (3 hours)
+osx_lid_wake: true # Enable lid wakeup
+osx_display_sleep: 15 # Sleep display after X minutes
+osx_computer_sleep_on_power: 0 # Never sleep when plugged in (0 = never)
+osx_computer_sleep_on_battery: 5 # Sleep after X minutes on battery
+osx_standby_delay: 10800 # Standby delay in seconds (3 hours)
 
 # macOS security settings
-osx_require_password_immediately: true  # Require password immediately after sleep/screensaver
+osx_require_password_immediately: true # Require password immediately after sleep/screensaver
 
 # macOS misc settings
-osx_bluetooth_audio_quality: 40  # Bluetooth audio bitpool minimum
-osx_disable_photos_auto_open: true  # Prevent Photos from auto-opening
-osx_time_machine_no_offer_new_disks: true  # Don't prompt to use new drives for backup
+osx_bluetooth_audio_quality: 40 # Bluetooth audio bitpool minimum
+osx_disable_photos_auto_open: true # Prevent Photos from auto-opening
+osx_time_machine_no_offer_new_disks: true # Don't prompt to use new drives for backup
 
 # Text editing settings
-osx_textedit_plain_text: true  # Use plain text mode by default in TextEdit
-osx_quicktime_auto_play: true  # Auto-play videos in QuickTime
+osx_textedit_plain_text: true # Use plain text mode by default in TextEdit
+osx_quicktime_auto_play: true # Auto-play videos in QuickTime
 
 # Set to 'true' to configure the Dock via dockutil.
 configure_dock: false
 # To completely clear the dock, set configure_dock to true and uncomment dockitems_remove_all
-dockitems_remove_all: false  # Set to true to remove all dock items (except Finder and Trash)
+dockitems_remove_all: false # Set to true to remove all dock items (except Finder and Trash)
 dockitems_remove: []
 # Common default macOS apps to remove:
 # - Launchpad

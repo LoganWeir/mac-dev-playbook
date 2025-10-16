@@ -12,6 +12,10 @@
   register: npm_available
   changed_when: false
 
+- name: Debug npm availability
+  debug:
+    msg: "NPM availability: {{ npm_available.stdout }}, npm_packages defined: {{ npm_packages is defined }}, npm_packages: {{ npm_packages | default('not defined') }}"
+
 - name: Install global NPM packages (system npm)
   npm:
     name: "{{ item.name | default(item) }}"
@@ -21,8 +25,9 @@
     executable: "{{ item.executable | default(omit) }}"
   loop: "{{ npm_packages | default([]) }}"
   when:
-    - npm_available.stdout == "system"
+    - "'system' in npm_available.stdout"
     - npm_packages is defined
+    - npm_packages | length > 0
 
 - name: Install global NPM packages (fnm)
   shell: |
@@ -30,8 +35,9 @@
     npm install -g {{ item.name | default(item) | quote }}
   loop: "{{ npm_packages | default([]) }}"
   when:
-    - npm_available.stdout == "fnm"
+    - "'fnm' in npm_available.stdout"
     - npm_packages is defined
+    - npm_packages | length > 0
   register: npm_install_result
   changed_when: "'added' in npm_install_result.stdout or 'updated' in npm_install_result.stdout"
 

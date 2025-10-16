@@ -72,6 +72,9 @@ brew install gh
 gh auth login
 # Choose: GitHub.com -> HTTPS -> Login with web browser
 
+# Setup git to use GitHub CLI for authentication
+gh auth setup-git
+
 # Configure git identity
 git config --global user.name "Your Name"
 git config --global user.email "your-email@example.com"
