@@ -5,7 +5,9 @@
     path: "{{ ansible_env.HOME }}/.local/share/chezmoi"
   register: chezmoi_initialized
 
-- name: Check if git credentials are configured
+# We use 'command' instead of git_config module because we're only checking existence,
+# not managing the configuration. The git_config module is overkill for a simple check.
+- name: Check if git credentials are configured  # noqa: command-instead-of-module
   command: git config --global user.email
   register: git_email
   changed_when: false

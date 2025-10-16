@@ -8,49 +8,74 @@ This playbook installs and configures most of the software I use on my Mac for w
 
 ## Installation
 
-### Pre-setup: GitHub Authentication (Required for Private Repos)
+### Quick Start (Recommended Order)
 
-If you're using chezmoi with a private dotfiles repository, you'll need to authenticate with GitHub first:
+  1. **Install Xcode Command Line Tools:**
+     ```bash
+     xcode-select --install
+     ```
+
+  2. **Sign in to the Mac App Store** (required for any App Store apps)
+
+  3. **Install Homebrew:**
+     ```bash
+     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+     # For Apple Silicon Macs (M1/M2/M3/M4):
+     echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
+     eval "$(/opt/homebrew/bin/brew shellenv)"
+
+     # For Intel Macs:
+     # Homebrew is usually already in PATH at /usr/local/bin
+     ```
+
+  4. **Install Ansible:**
+     ```bash
+     # Using pip (recommended)
+     pip3 install --user ansible
+
+     # Add to PATH if needed:
+     export PATH="$HOME/Library/Python/3.9/bin:$PATH"
+     ```
+
+  5. **Clone this repository:**
+     ```bash
+     git clone https://github.com/LoganWeir/mac-dev-playbook.git
+     cd mac-dev-playbook
+     ```
+
+  6. **Install Ansible requirements:**
+     ```bash
+     ansible-galaxy install -r requirements.yml
+     ```
+
+  7. **Create your config override file (optional):**
+     ```bash
+     cp default.config.yml config.yml
+     # Edit config.yml to customize your setup
+     ```
+
+  8. **Run the playbook:**
+     ```bash
+     ansible-playbook main.yml --ask-become-pass
+     ```
+
+### GitHub Authentication (Only if using private dotfiles repo)
+
+If your chezmoi dotfiles repository is private, authenticate with GitHub first:
 
 ```bash
-# Install Homebrew if not already installed
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Add Homebrew to PATH
-# For Apple Silicon Macs (M1/M2/M3):
-echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
-# For Intel Macs (Homebrew is usually already in PATH at /usr/local/bin)
-# If brew command not found, add to ~/.zshrc:
-# export PATH="/usr/local/bin:$PATH"
-
-# Install GitHub CLI
+# Install GitHub CLI (if not already installed via playbook)
 brew install gh
 
-# Authenticate with GitHub (follow the interactive prompts)
+# Authenticate with GitHub
 gh auth login
-
 # Choose: GitHub.com -> HTTPS -> Login with web browser
-# This will handle authentication for both git and the gh CLI
 
-# Configure git with your identity
+# Configure git identity
 git config --global user.name "Your Name"
 git config --global user.email "your-email@example.com"
 ```
-
-### Main Installation Steps
-
-  1. Ensure Apple's command line tools are installed (`xcode-select --install` to launch the installer).
-  2. [Install Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html):
-
-     1. Run the following command to add Python 3 to your $PATH: `export PATH="$HOME/Library/Python/3.9/bin:/opt/homebrew/bin:$PATH"`
-     2. Upgrade Pip: `sudo pip3 install --upgrade pip`
-     3. Install Ansible: `pip3 install ansible`
-
-  3. Clone or download this repository to your local drive.
-  4. Run `ansible-galaxy install -r requirements.yml` inside this directory to install required Ansible roles.
-  5. Run `ansible-playbook main.yml --ask-become-pass` inside this directory. Enter your macOS account password when prompted for the 'BECOME' password.
 
 > Note: If some Homebrew commands fail, you might need to agree to Xcode's license or fix some other Brew issue. Run `brew doctor` to see if this is the case.
 
@@ -75,9 +100,21 @@ If you need to supply an SSH password (if you don't use SSH keys), make sure to 
 
 ### Running a specific set of tagged tasks
 
-You can filter which part of the provisioning process to run by specifying a set of tags using `ansible-playbook`'s `--tags` flag. The tags available are `dotfiles`, `homebrew`, `mas`, `extra-packages` and `osx`.
+You can filter which part of the provisioning process to run by specifying a set of tags using `ansible-playbook`'s `--tags` flag. The tags available are:
 
-    ansible-playbook main.yml -K --tags "dotfiles,homebrew"
+- `homebrew` - Install Homebrew packages and cask applications
+- `mas` - Install Mac App Store applications
+- `dock` - Configure the Dock
+- `osx` - Configure macOS system settings
+- `package-managers` / `packages` - Install packages via pip, npm, gem, etc.
+- `languages` / `python` / `node` - Configure Python and Node.js environments
+- `chezmoi` / `dotfiles` - Set up chezmoi for dotfiles management
+- `zed` / `editors` - Configure Zed editor
+- `post` - Run post-provisioning tasks
+
+Example:
+
+    ansible-playbook main.yml -K --tags "homebrew,osx"
 
 ## Overriding Defaults
 
@@ -123,67 +160,44 @@ dockitems_persist:
 
 Any variable can be overridden in `config.yml`; see the supporting roles' documentation for a complete list of available variables.
 
-## Included Applications / Configuration (Default)
+## What This Playbook Does
 
-Applications (installed with Homebrew Cask):
+### System Configuration
+- **macOS Settings**: Configures trackpad, keyboard, Finder, Dock, and system preferences
+- **Power Management**: Sets sleep, standby, and display settings
+- **Security**: Password requirements, Gatekeeper settings
 
-  - [ChromeDriver](https://sites.google.com/chromium.org/driver/)
-  - [Docker](https://www.docker.com/)
-  - [Dropbox](https://www.dropbox.com/)
-  - [Firefox](https://www.mozilla.org/en-US/firefox/new/)
-  - [Google Chrome](https://www.google.com/chrome/)
-  - [Handbrake](https://handbrake.fr/)
-  - [Homebrew](http://brew.sh/)
-  - [LICEcap](http://www.cockos.com/licecap/)
-  - [nvALT](http://brettterpstra.com/projects/nvalt/)
-  - [Sequel Ace](https://sequel-ace.com) (MySQL client)
-  - [Slack](https://slack.com/)
-  - [Sublime Text](https://www.sublimetext.com/)
-  - [Transmit](https://panic.com/transmit/) (S/FTP client)
+### Development Environment
+- **Package Managers**: Homebrew, pip, npm, gem
+- **Languages**: Python 3.14 (via pyenv), Node.js 24 (via fnm)
+- **Dotfiles**: Managed via [chezmoi](https://www.chezmoi.io/) with repository https://github.com/LoganWeir/dotfiles.git
 
-Packages (installed with Homebrew):
+### Default Applications (via Homebrew Cask)
+- Development: Docker, ChromeDriver
+- Browsers: Firefox, Google Chrome
+- Communication: Slack
+- Database: Sequel Ace
+- Utilities: Handbrake, LICEcap, Transmit
 
-  - autoconf
-  - bash-completion
-  - doxygen
-  - gettext
-  - gifsicle
-  - git
-  - go
-  - gpg
-  - httpie
-  - iperf
-  - libevent
-  - sqlite
-  - nmap
-  - php
-  - uv (Fast Python package manager)
-  - pyenv (Python version management)
-  - fnm (Fast Node Manager)
-  - ssh-copy-id
-  - readline
-  - openssl
-  - pv
-  - wget
-  - wrk
-  - zsh-history-substring-search
+### Default Packages (via Homebrew)
+- Core tools: git, wget, openssl, ssh-copy-id
+- Development: go, autoconf, doxygen
+- Python: pyenv, uv (fast package manager)
+- Node.js: fnm (Fast Node Manager)
+- Database: sqlite, postgresql, postgis
+- Network: nmap, httpie, iperf
+- Shell: bash-completion, zsh-history-substring-search
 
-My [dotfiles](https://github.com/geerlingguy/dotfiles) are also installed into the current user's home directory, including the `.osx` dotfile for configuring many aspects of macOS for better performance and ease of use. You can disable dotfiles management by setting `configure_dotfiles: no` in your configuration.
-
-**Note:** This fork is configured to use [chezmoi](https://www.chezmoi.io/) for dotfiles management instead of the default approach. Chezmoi will be installed and automatically initialized with the repository https://github.com/LoganWeir/dotfiles.git if Git is properly configured.
-
-**Language Runtimes:** The playbook automatically configures:
-- **Python 3.14** via pyenv (set as global default)
-- **Node.js 24** via fnm (Fast Node Manager, set as default)
-- **uv** for fast Python package management
-
-Finally, there are a few other preferences and settings added on for various apps and services.
 
 ## Post-Installation
 
 After running the playbook:
 
-- Import Rectangle configuration from `app_cofig_files/logan_rectangle_config.json`
+- Import Rectangle configuration from `files/app_config/logan_rectangle_config.json`
+- Import VSCode profile from `files/app_config/Logan.code-profile`
+- Install Zed extensions (settings will be copied to `~/.config/zed/settings.json`)
+- Install Chrome extensions: Vimium, Bitwarden, 1Password, Earth View from Google
+- Install MCP servers in Claude Code: context7, figma, jira, github
 
 ## Full / From-scratch setup guide
 
@@ -191,14 +205,55 @@ Since I've used this playbook to set up something like 20 different Macs, I deci
 
 You can see my full from-scratch setup document here: [full-mac-setup.md](full-mac-setup.md).
 
+## Troubleshooting
+
+### Common Issues
+
+**Homebrew installation fails:**
+```bash
+brew doctor  # Check for issues
+brew update  # Update Homebrew
+```
+
+**Ansible can't find Python:**
+```bash
+# Use explicit Python path
+ansible-playbook main.yml --ask-become-pass -e ansible_python_interpreter=/usr/bin/python3
+```
+
+**Permission denied errors:**
+- Make sure to use `--ask-become-pass` (or `-K`) when running the playbook
+- Some macOS settings require Full Disk Access for Terminal
+
+**Mac App Store apps fail to install:**
+- Ensure you're signed in to the Mac App Store before running the playbook
+- Some apps may require purchase or previous download
+
+**Chezmoi fails to initialize:**
+- If using a private repository, ensure GitHub authentication is set up first
+- Check that git is configured with your user.name and user.email
+
 ## Testing the Playbook
 
-Many people have asked me if I often wipe my entire workstation and start from scratch just to test changes to the playbook. Nope! This project is [continuously tested on GitHub Actions' macOS infrastructure](https://github.com/geerlingguy/mac-dev-playbook/actions?query=workflow%3ACI).
+### Local Testing
+```bash
+# Syntax check only
+ansible-playbook main.yml --syntax-check
 
-You can also run macOS itself inside a VM, for at least some of the required testing (App Store apps and some proprietary software might not install properly). I currently recommend:
+# Dry run (check mode)
+ansible-playbook main.yml --check -K
 
-  - [UTM](https://mac.getutm.app)
-  - [Tart](https://github.com/cirruslabs/tart)
+# Run specific tags only
+ansible-playbook main.yml -K --tags "osx"
+```
+
+### CI Testing
+This project is [continuously tested on GitHub Actions' macOS infrastructure](https://github.com/geerlingguy/mac-dev-playbook/actions?query=workflow%3ACI).
+
+### VM Testing
+For testing in a virtual machine:
+  - [UTM](https://mac.getutm.app) - Free, open-source
+  - [Tart](https://github.com/cirruslabs/tart) - CLI-based
 
 ## Ansible for DevOps
 

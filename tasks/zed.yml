@@ -1,0 +1,20 @@
+---
+# Configure Zed editor settings
+- name: Ensure Zed config directory exists
+  file:
+    path: "{{ ansible_env.HOME }}/.config/zed"
+    state: directory
+    mode: '0755'
+
+- name: Copy Zed settings file
+  copy:
+    src: "{{ playbook_dir }}/files/app_config/settings.json"
+    dest: "{{ ansible_env.HOME }}/.config/zed/settings.json"
+    mode: '0644'
+    backup: true  # Creates a backup if file already exists
+
+- name: Display Zed configuration status
+  debug:
+    msg: |
+      Zed settings have been copied to ~/.config/zed/settings.json
+      Remember to install any needed Zed extensions through the editor

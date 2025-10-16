@@ -1,6 +1,4 @@
 ---
-configure_dotfiles: true
-configure_terminal: true
 configure_osx: true
 
 # macOS trackpad settings
@@ -9,6 +7,73 @@ osx_force_click: false  # Force click and haptic feedback
 osx_lookup_data_detectors: false  # Three finger tap for lookup & data detectors
 osx_tap_to_click: true  # Tap to click
 osx_two_finger_right_click: true  # Secondary click with two fingers
+
+# macOS system settings
+osx_disable_boot_sound: true  # Disable sound effects on boot
+osx_always_show_scrollbars: true  # Always show scrollbars
+osx_expand_save_panel: true  # Expand save panel by default
+osx_expand_print_panel: true  # Expand print panel by default
+osx_save_to_disk_by_default: true  # Save to disk (not iCloud) by default
+osx_quit_printer_when_finished: true  # Automatically quit printer app when done
+osx_disable_quarantine: false  # Disable "Are you sure you want to open this?" dialog (security risk!)
+osx_disable_auto_correct: true  # Disable auto-correct
+osx_disable_auto_capitalize: true  # Disable automatic capitalization
+osx_disable_smart_dashes: true  # Disable smart dashes
+osx_disable_smart_quotes: true  # Disable smart quotes
+osx_disable_auto_period: true  # Disable automatic period substitution
+
+# macOS keyboard settings
+osx_keyboard_repeat_rate: 1  # Keyboard repeat rate (1 = fastest)
+osx_initial_key_repeat: 10  # Initial key repeat delay (10 = shortest)
+
+# macOS Finder settings
+osx_finder_home_default: true  # Set Home as default location for new Finder windows
+osx_finder_disable_animations: true  # Disable window animations
+osx_finder_show_all_extensions: true  # Show all filename extensions
+osx_finder_show_status_bar: true  # Show status bar
+osx_finder_show_path_bar: true  # Show path bar
+osx_finder_show_posix_path: true  # Display full POSIX path as window title
+osx_finder_folders_first: true  # Keep folders on top when sorting by name
+osx_finder_search_current_folder: true  # Search current folder by default
+osx_finder_disable_extension_warning: true  # Disable warning when changing file extension
+osx_finder_spring_loading_enabled: true  # Enable spring loading for directories
+osx_finder_spring_loading_delay: 0.5  # Spring loading delay in seconds
+osx_finder_disable_ds_store_network: true  # Avoid creating .DS_Store files on network volumes
+osx_finder_disable_ds_store_usb: true  # Avoid creating .DS_Store files on USB volumes
+osx_finder_default_view: "Nlsv"  # Default view (Nlsv=list, icnv=icon, clmv=column, glyv=gallery)
+osx_finder_show_library: true  # Show ~/Library folder
+osx_finder_show_volumes: true  # Show /Volumes folder
+
+# macOS Dock settings
+osx_dock_tile_size: 16  # Icon size in pixels
+osx_dock_magnification: false  # Disable magnification on hover
+osx_dock_autohide: true  # Auto-hide the dock
+osx_dock_autohide_delay: 0  # Delay before dock appears
+osx_dock_autohide_time_modifier: 0  # Animation speed for showing/hiding
+osx_dock_minimize_effect: "scale"  # Minimize effect (scale or genie)
+osx_dock_show_indicators: true  # Show indicator lights for open apps
+osx_dock_launch_animation: true  # Animate opening applications
+osx_dock_expose_animation_duration: 0.1  # Mission Control animation speed
+osx_dock_show_recents: false  # Don't show recent applications
+
+# macOS power management settings
+osx_lid_wake: true  # Enable lid wakeup
+osx_display_sleep: 15  # Sleep display after X minutes
+osx_computer_sleep_on_power: 0  # Never sleep when plugged in (0 = never)
+osx_computer_sleep_on_battery: 5  # Sleep after X minutes on battery
+osx_standby_delay: 10800  # Standby delay in seconds (3 hours)
+
+# macOS security settings
+osx_require_password_immediately: true  # Require password immediately after sleep/screensaver
+
+# macOS misc settings
+osx_bluetooth_audio_quality: 40  # Bluetooth audio bitpool minimum
+osx_disable_photos_auto_open: true  # Prevent Photos from auto-opening
+osx_time_machine_no_offer_new_disks: true  # Don't prompt to use new drives for backup
+
+# Text editing settings
+osx_textedit_plain_text: true  # Use plain text mode by default in TextEdit
+osx_quicktime_auto_play: true  # Auto-play videos in QuickTime
 
 # Set to 'true' to configure the Dock via dockutil.
 configure_dock: false
@@ -41,24 +106,6 @@ dockitems_persist: []
 # - name: "Sublime Text"
 #   path: "/Applications/Sublime Text.app/"
 #   pos: 5
-
-configure_sudoers: false
-sudoers_custom_config: ""
-# Example:
-# sudoers_custom_config: |
-#   # Allow users in admin group to use sudo with no password.
-#   %admin ALL=(ALL) NOPASSWD: ALL
-
-dotfiles_repo: https://github.com/geerlingguy/dotfiles.git
-dotfiles_repo_accept_hostkey: true
-dotfiles_repo_local_destination: ~/Development/GitHub/dotfiles
-dotfiles_repo_version: master # Replace with your default branch
-dotfiles_files:
-  - .zshrc
-  - .gitignore
-  - .inputrc
-  - .osx
-  - .vimrc
 
 homebrew_installed_packages:
   # - ansible # Installed via Pip.
@@ -98,15 +145,12 @@ homebrew_cask_apps:
   - licecap
   - sequel-ace
   - slack
-  - sublime-text
   - transmit
 
 # See `geerlingguy.mac.mas` role documentation for usage instructions.
 mas_installed_apps: []
 mas_email: ""
 mas_password: ""
-
-osx_script: "~/.osx --no-restart"
 
 # Install packages from other package managers.
 # Note: You are responsible for making sure the required package managers are
@@ -127,24 +171,6 @@ pip_packages: []
 # - name: mkdocs
 #   state: present # present/absent/latest, default: present
 #   version: "0.16.3" # default: N/A
-
-# Set to 'true' to configure Sublime Text.
-configure_sublime: false
-sublime_base_path: "~/Library/Application Support/Sublime Text"
-sublime_config_path: "Packages/User"
-sublime_package_control:
-  - "DocBlockr"
-  - "Dockerfile Syntax Highlighting"
-  - "FileDiffs"
-  - "GitHub Flavored Markdown Preview"
-  - "Jinja2"
-  - "Package Control"
-  - "Pretty JSON"
-  - "SublimeLinter"
-  - "SublimeLinter-contrib-yamllint"
-  - "Theme - Cobalt2"
-  - "TrailingSpaces"
-  - "WordingStatus"
 
 # Glob pattern to ansible task files to run after all other tasks are finished.
 post_provision_tasks: []

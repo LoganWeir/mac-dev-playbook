@@ -1,19 +1,16 @@
 ---
 name: CI
-'on':
+"on":
   pull_request:
     paths-ignore:
-      - '*.md' # Markdown docs need no linting/testing etc.
+      - "*.md" # Markdown docs need no linting/testing etc.
   push:
     paths-ignore:
-      - '*.md'
+      - "*.md"
     branches:
       - master
-  schedule:
-    - cron: "0 5 * * 4"
 
 jobs:
-
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -24,7 +21,7 @@ jobs:
       - name: Set up Python 3.
         uses: actions/setup-python@v6
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install test dependencies.
         run: pip3 install yamllint ansible ansible-lint
@@ -41,7 +38,6 @@ jobs:
       matrix:
         os:
           - macos-15
-          - macos-14
 
     steps:
       - name: Check out the codebase.
@@ -74,7 +70,7 @@ jobs:
       - name: Test the playbook.
         run: ansible-playbook main.yml
         env:
-          ANSIBLE_FORCE_COLOR: '1'
+          ANSIBLE_FORCE_COLOR: "1"
 
       - name: Idempotence check.
         run: |
@@ -82,4 +78,4 @@ jobs:
           ansible-playbook main.yml | tee -a ${idempotence}
           tail ${idempotence} | grep -q 'changed=0.*failed=0' && (echo 'Idempotence test: pass' && exit 0) || (echo 'Idempotence test: fail' && exit 1)
         env:
-          ANSIBLE_FORCE_COLOR: '1'
+          ANSIBLE_FORCE_COLOR: "1"

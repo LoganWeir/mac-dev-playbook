@@ -1,8 +1,65 @@
 ---
-# TODO: Use sudo once .osx can be run via root with no user interaction.
-- name: Run .osx dotfiles.
-  command: "{{ osx_script }}"
-  changed_when: false
+# System-wide settings
+- name: Disable the sound effects on boot
+  command: nvram SystemAudioVolume=" "
+  become: true
+  when: osx_disable_boot_sound
+
+- name: Always show scrollbars
+  command: defaults write NSGlobalDomain AppleShowScrollBars -string "Always"
+  when: osx_always_show_scrollbars
+  changed_when: true
+
+- name: Expand save panel by default
+  shell: |
+    defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool {{ osx_expand_save_panel | lower }}
+    defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool {{ osx_expand_save_panel | lower }}
+  changed_when: true
+
+- name: Expand print panel by default
+  shell: |
+    defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool {{ osx_expand_print_panel | lower }}
+    defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool {{ osx_expand_print_panel | lower }}
+  changed_when: true
+
+- name: Save to disk (not to iCloud) by default
+  command: defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool {{ (not osx_save_to_disk_by_default) | lower }}
+  changed_when: true
+
+- name: Automatically quit printer app once print jobs complete
+  command: defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool {{ osx_quit_printer_when_finished | lower }}
+  changed_when: true
+
+- name: Disable quarantine dialog
+  command: defaults write com.apple.LaunchServices LSQuarantine -bool {{ (not osx_disable_quarantine) | lower }}
+  when: osx_disable_quarantine
+  changed_when: true
+
+- name: Reveal IP/hostname when clicking clock in login screen
+  command: defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
+  become: true
+  changed_when: true
+
+# Text substitution settings
+- name: Disable automatic capitalization
+  command: defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool {{ (not osx_disable_auto_capitalize) | lower }}
+  changed_when: true
+
+- name: Disable smart dashes
+  command: defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool {{ (not osx_disable_smart_dashes) | lower }}
+  changed_when: true
+
+- name: Disable automatic period substitution
+  command: defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool {{ (not osx_disable_auto_period) | lower }}
+  changed_when: true
+
+- name: Disable smart quotes
+  command: defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool {{ (not osx_disable_smart_quotes) | lower }}
+  changed_when: true
+
+- name: Disable auto-correct
+  command: defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool {{ (not osx_disable_auto_correct) | lower }}
+  changed_when: true
 
 # Trackpad settings
 - name: Configure trackpad scroll direction
@@ -10,7 +67,7 @@
   changed_when: true
 
 - name: Configure force click and haptic feedback
-  command: |
+  shell: |
     defaults write com.apple.AppleMultitouchTrackpad ForceSuppressed -bool {{ (not osx_force_click) | lower }}
     defaults write com.apple.AppleMultitouchTrackpad ActuateDetents -bool {{ osx_force_click | lower }}
     defaults write com.apple.preference.trackpad ForceClickSavedState -bool {{ osx_force_click | lower }}
@@ -21,13 +78,13 @@
   changed_when: true
 
 - name: Configure tap to click
-  command: |
+  shell: |
     defaults write com.apple.AppleMultitouchTrackpad Clicking -bool {{ osx_tap_to_click | lower }}
     defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool {{ osx_tap_to_click | lower }}
   changed_when: true
 
 - name: Configure secondary click (two finger right click)
-  command: |
+  shell: |
     defaults write com.apple.AppleMultitouchTrackpad TrackpadRightClick -bool {{ osx_two_finger_right_click | lower }}
     defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool {{ osx_two_finger_right_click | lower }}
     defaults write com.apple.AppleMultitouchTrackpad TrackpadCornerSecondaryClick -int 0
@@ -35,3 +92,252 @@
   changed_when: true
 
 # Note: Trackpad settings may require logout/login to take full effect
+
+# Screenshot settings
+- name: Ensure screenshots directory exists
+  file:
+    path: "{{ ansible_env.HOME }}/Pictures/screenshots"
+    state: directory
+    mode: '0755'
+
+- name: Get current screenshot location
+  command: defaults read com.apple.screencapture location
+  register: current_screenshot_location
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Set screenshot save location to ~/Pictures/screenshots
+  command: defaults write com.apple.screencapture location "{{ ansible_env.HOME }}/Pictures/screenshots"
+  when: current_screenshot_location.stdout != ansible_env.HOME + "/Pictures/screenshots"
+  register: screenshot_location_changed
+
+# We don't use a handler here because this needs to run immediately after changing
+# the screenshot location, not at the end of the playbook. Handlers are deferred
+# until the end, which would mean screenshots taken during the playbook run would
+# still go to the old location.
+- name: Restart SystemUIServer to apply screenshot changes  # noqa: no-handler
+  command: killall SystemUIServer
+  when: screenshot_location_changed is changed
+
+- name: Set screenshot format to PNG (default, but ensures consistency)
+  command: defaults write com.apple.screencapture type -string "png"
+  changed_when: false
+
+# Keyboard layout settings
+- name: Set keyboard layouts (Dvorak first, then US)
+  shell: |
+    defaults write com.apple.HIToolbox AppleEnabledInputSources -array \
+      '<dict>
+        <key>InputSourceKind</key>
+        <string>Keyboard Layout</string>
+        <key>KeyboardLayout ID</key>
+        <integer>16300</integer>
+        <key>KeyboardLayout Name</key>
+        <string>Dvorak</string>
+      </dict>' \
+      '<dict>
+        <key>InputSourceKind</key>
+        <string>Keyboard Layout</string>
+        <key>KeyboardLayout ID</key>
+        <integer>0</integer>
+        <key>KeyboardLayout Name</key>
+        <string>U.S.</string>
+      </dict>'
+  changed_when: true
+
+- name: Set Dvorak as the current/default input source
+  shell: |
+    defaults write com.apple.HIToolbox AppleCurrentKeyboardLayoutInputSourceID -string "com.apple.keylayout.Dvorak"
+    defaults write com.apple.HIToolbox AppleDefaultAsciiInputSource -dict \
+      InputSourceKind "Keyboard Layout" \
+      "KeyboardLayout ID" -int 16300 \
+      "KeyboardLayout Name" "Dvorak"
+  changed_when: true
+
+# Audio settings
+- name: Increase sound quality for Bluetooth headphones/headsets
+  command: defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int {{ osx_bluetooth_audio_quality }}
+  changed_when: true
+
+# Keyboard settings
+- name: Set keyboard repeat rate
+  command: defaults write NSGlobalDomain KeyRepeat -int {{ osx_keyboard_repeat_rate }}
+  changed_when: true
+
+- name: Set initial key repeat delay
+  command: defaults write NSGlobalDomain InitialKeyRepeat -int {{ osx_initial_key_repeat }}
+  changed_when: true
+
+# Power management settings
+- name: Enable lid wakeup
+  command: pmset -a lidwake {{ '1' if osx_lid_wake else '0' }}
+  become: true
+  changed_when: true
+
+- name: Set display sleep timer
+  command: pmset -a displaysleep {{ osx_display_sleep }}
+  become: true
+  changed_when: true
+
+- name: Set computer sleep when plugged in
+  command: pmset -c sleep {{ osx_computer_sleep_on_power }}
+  become: true
+  changed_when: true
+
+- name: Set computer sleep on battery
+  command: pmset -b sleep {{ osx_computer_sleep_on_battery }}
+  become: true
+  changed_when: true
+
+- name: Set standby delay
+  command: pmset -a standbydelay {{ osx_standby_delay }}
+  become: true
+  changed_when: true
+
+# Security settings
+- name: Require password immediately after sleep or screensaver
+  shell: |
+    defaults write com.apple.screensaver askForPassword -int {{ '1' if osx_require_password_immediately else '0' }}
+    defaults write com.apple.screensaver askForPasswordDelay -int 0
+  changed_when: true
+
+# Finder settings
+- name: Disable Finder animations
+  command: defaults write com.apple.finder DisableAllAnimations -bool {{ osx_finder_disable_animations | lower }}
+  changed_when: true
+
+- name: Set default location for new Finder windows
+  command: defaults write com.apple.finder NewWindowTarget -string "{{ 'PfHm' if osx_finder_home_default else 'PfDe' }}"
+  changed_when: true
+
+- name: Show all filename extensions
+  command: defaults write NSGlobalDomain AppleShowAllExtensions -bool {{ osx_finder_show_all_extensions | lower }}
+  changed_when: true
+
+- name: Show Finder status bar
+  command: defaults write com.apple.finder ShowStatusBar -bool {{ osx_finder_show_status_bar | lower }}
+  changed_when: true
+
+- name: Show Finder path bar
+  command: defaults write com.apple.finder ShowPathbar -bool {{ osx_finder_show_path_bar | lower }}
+  changed_when: true
+
+- name: Display full POSIX path as Finder window title
+  command: defaults write com.apple.finder _FXShowPosixPathInTitle -bool {{ osx_finder_show_posix_path | lower }}
+  changed_when: true
+
+- name: Keep folders on top when sorting by name
+  command: defaults write com.apple.finder _FXSortFoldersFirst -bool {{ osx_finder_folders_first | lower }}
+  changed_when: true
+
+- name: Search current folder by default
+  command: defaults write com.apple.finder FXDefaultSearchScope -string "{{ 'SCcf' if osx_finder_search_current_folder else 'SCev' }}"
+  changed_when: true
+
+- name: Disable file extension change warning
+  command: defaults write com.apple.finder FXEnableExtensionChangeWarning -bool {{ (not osx_finder_disable_extension_warning) | lower }}
+  changed_when: true
+
+- name: Enable spring loading for directories
+  command: defaults write NSGlobalDomain com.apple.springing.enabled -bool {{ osx_finder_spring_loading_enabled | lower }}
+  changed_when: true
+
+- name: Set spring loading delay
+  command: defaults write NSGlobalDomain com.apple.springing.delay -float {{ osx_finder_spring_loading_delay }}
+  changed_when: true
+
+- name: Avoid creating .DS_Store files on network volumes
+  command: defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool {{ osx_finder_disable_ds_store_network | lower }}
+  changed_when: true
+
+- name: Avoid creating .DS_Store files on USB volumes
+  command: defaults write com.apple.desktopservices DSDontWriteUSBStores -bool {{ osx_finder_disable_ds_store_usb | lower }}
+  changed_when: true
+
+- name: Set Finder default view style
+  command: defaults write com.apple.finder FXPreferredViewStyle -string "{{ osx_finder_default_view }}"
+  changed_when: true
+
+- name: Show ~/Library folder
+  shell: chflags nohidden ~/Library && xattr -d com.apple.FinderInfo ~/Library 2>/dev/null || true
+  when: osx_finder_show_library
+  changed_when: true
+
+- name: Show /Volumes folder
+  command: chflags nohidden /Volumes
+  become: true
+  when: osx_finder_show_volumes
+  changed_when: true
+
+# Dock settings
+- name: Set Dock icon size
+  command: defaults write com.apple.dock tilesize -int {{ osx_dock_tile_size }}
+  changed_when: true
+
+- name: Configure Dock magnification
+  command: defaults write com.apple.dock magnification -bool {{ osx_dock_magnification | lower }}
+  changed_when: true
+
+- name: Configure Dock auto-hide
+  command: defaults write com.apple.dock autohide -bool {{ osx_dock_autohide | lower }}
+  changed_when: true
+
+- name: Set Dock auto-hide delay
+  command: defaults write com.apple.dock autohide-delay -float {{ osx_dock_autohide_delay }}
+  changed_when: true
+
+- name: Set Dock auto-hide animation speed
+  command: defaults write com.apple.dock autohide-time-modifier -float {{ osx_dock_autohide_time_modifier }}
+  changed_when: true
+
+- name: Set minimize/maximize window effect
+  command: defaults write com.apple.dock mineffect -string "{{ osx_dock_minimize_effect }}"
+  changed_when: true
+
+- name: Enable spring loading for all Dock items
+  command: defaults write com.apple.dock enable-spring-load-actions-on-all-items -bool true
+  changed_when: true
+
+- name: Show indicator lights for open applications
+  command: defaults write com.apple.dock show-process-indicators -bool {{ osx_dock_show_indicators | lower }}
+  changed_when: true
+
+- name: Animate opening applications from Dock
+  command: defaults write com.apple.dock launchanim -bool {{ osx_dock_launch_animation | lower }}
+  changed_when: true
+
+- name: Speed up Mission Control animations
+  command: defaults write com.apple.dock expose-animation-duration -float {{ osx_dock_expose_animation_duration }}
+  changed_when: true
+
+- name: Configure recent applications in Dock
+  command: defaults write com.apple.dock show-recents -bool {{ osx_dock_show_recents | lower }}
+  changed_when: true
+
+- name: Apply Dock changes
+  command: killall Dock
+  changed_when: true
+
+# Time Machine settings
+- name: Prevent Time Machine from prompting to use new hard drives
+  command: defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool {{ osx_time_machine_no_offer_new_disks | lower }}
+  changed_when: true
+
+# TextEdit settings
+- name: Use plain text mode for new TextEdit documents
+  shell: |
+    defaults write com.apple.TextEdit RichText -int {{ '0' if osx_textedit_plain_text else '1' }}
+    defaults write com.apple.TextEdit PlainTextEncoding -int 4
+    defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
+  changed_when: true
+
+# QuickTime settings
+- name: Auto-play videos in QuickTime
+  command: defaults write com.apple.QuickTimePlayerX MGPlayMovieOnOpen -bool {{ osx_quicktime_auto_play | lower }}
+  changed_when: true
+
+# Photos settings
+- name: Prevent Photos from opening automatically
+  command: defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool {{ osx_disable_photos_auto_open | lower }}
+  changed_when: true
