@@ -38,4 +38,4 @@
   register: chezmoi_status
   changed_when: false
   failed_when: false
-  when: chezmoi_initialized.stat.exists or (chezmoi_init_result is defined and chezmoi_init_result.rc == 0)
+  when: chezmoi_initialized.stat.exists or (chezmoi_init_result is defined and chezmoi_init_result is not skipped and chezmoi_init_result.rc == 0)
