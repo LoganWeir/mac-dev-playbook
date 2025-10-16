@@ -32,11 +32,11 @@
       when: configure_osx
       tags: ['osx']
 
-    - import_tasks: tasks/package_managers.yml
-      tags: ['package-managers', 'packages']
-
     - import_tasks: tasks/languages.yml
       tags: ['languages', 'python', 'node']
+
+    - import_tasks: tasks/package_managers.yml
+      tags: ['package-managers', 'packages']
 
     - import_tasks: tasks/chezmoi.yml
       tags: ['chezmoi', 'dotfiles']
