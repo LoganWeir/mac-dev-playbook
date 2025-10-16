@@ -1,0 +1,70 @@
+---
+# Custom configuration overrides for mac-dev-playbook
+# This file overrides settings in default.config.yml
+
+# Dock configuration
+configure_dock: true # Uncomment to enable dock configuration
+dockitems_remove_all: true # Uncomment to completely clear the dock
+
+# Additional Homebrew packages (command-line tools)
+homebrew_installed_packages:
+  # Include all defaults from default.config.yml
+  - bash-completion
+  - git
+  - go
+  - openssl
+  - wget
+  - postgresql
+  - postgis
+  - chezmoi
+  - uv
+  - pyenv
+  - fnm
+  - openvpn
+
+homebrew_cask_apps:
+  - chromedriver
+  - docker
+  - firefox
+  - google-chrome
+  - anki
+  - handbrake
+  - slack
+  - darktable
+  - spotify
+  - obsidian
+  - rectangle
+  - wezterm
+  - zed
+  - visual-studio-code
+  - tailscale-app
+  - amazon-photos
+  - balenaetcher
+  - bitwarden
+  - discord
+  - 1password
+  - gimp
+  - steam
+  - vlc
+  - whatsapp
+
+# Python packages to install with pip
+pip_packages:
+  - xkcdpass
+  - ansible-lint
+  - ruff
+  - jupyter
+  - pandas
+  - polars
+  - numpy
+  - yamllint
+  - ansible
+
+# Node packages to install globally with npm
+npm_packages:
+  - "@anthropic-ai/claude-code"
+  - "@biomejs/biome"
+
+# Mac App Store apps to install
+mas_installed_apps:
+  - { id: 1493327990, name: "Streaks" }
