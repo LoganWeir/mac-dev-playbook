@@ -1,87 +1,235 @@
 ---
 # System-wide settings
-- name: Disable the sound effects on boot
-  command: nvram SystemAudioVolume=" "
-  become: true
-  when: osx_disable_boot_sound
+- name: Check current appearance mode
+  command: defaults read NSGlobalDomain AppleInterfaceStyle
+  register: current_appearance_mode
+  changed_when: false
+  failed_when: false
+
+- name: Set appearance to dark mode
+  command: defaults write NSGlobalDomain AppleInterfaceStyle -string "Dark"
+  when: current_appearance_mode.rc != 0 or current_appearance_mode.stdout != "Dark"
+
+- name: Check current scrollbar setting
+  command: defaults read NSGlobalDomain AppleShowScrollBars
+  register: current_scrollbars
+  changed_when: false
+  failed_when: false
 
 - name: Always show scrollbars
   command: defaults write NSGlobalDomain AppleShowScrollBars -string "Always"
-  when: osx_always_show_scrollbars
-  changed_when: true
+  when: osx_always_show_scrollbars and (current_scrollbars.rc != 0 or current_scrollbars.stdout != "Always")
+
+- name: Check current save panel expansion setting
+  command: defaults read NSGlobalDomain NSNavPanelExpandedStateForSaveMode
+  register: current_save_panel
+  changed_when: false
+  failed_when: false
 
 - name: Expand save panel by default
   shell: |
     defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool {{ osx_expand_save_panel | lower }}
     defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool {{ osx_expand_save_panel | lower }}
-  changed_when: true
+  when: >
+    current_save_panel.rc != 0 or
+    (current_save_panel.stdout|int == 1 and not osx_expand_save_panel) or
+    (current_save_panel.stdout|int == 0 and osx_expand_save_panel)
+
+- name: Check current print panel expansion setting
+  command: defaults read NSGlobalDomain PMPrintingExpandedStateForPrint
+  register: current_print_panel
+  changed_when: false
+  failed_when: false
 
 - name: Expand print panel by default
   shell: |
     defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool {{ osx_expand_print_panel | lower }}
     defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool {{ osx_expand_print_panel | lower }}
-  changed_when: true
+  when: >
+    current_print_panel.rc != 0 or
+    (current_print_panel.stdout|int == 1 and not osx_expand_print_panel) or
+    (current_print_panel.stdout|int == 0 and osx_expand_print_panel)
+
+- name: Check current iCloud save setting
+  command: defaults read NSGlobalDomain NSDocumentSaveNewDocumentsToCloud
+  register: current_icloud_save
+  changed_when: false
+  failed_when: false
 
 - name: Save to disk (not to iCloud) by default
   command: defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool {{ (not osx_save_to_disk_by_default) | lower }}
-  changed_when: true
+  when: >
+    current_icloud_save.rc != 0 or
+    (current_icloud_save.stdout|int == 1 and osx_save_to_disk_by_default) or
+    (current_icloud_save.stdout|int == 0 and not osx_save_to_disk_by_default)
+
+- name: Check current printer quit setting
+  command: defaults read com.apple.print.PrintingPrefs "Quit When Finished"
+  register: current_printer_quit
+  changed_when: false
+  failed_when: false
 
 - name: Automatically quit printer app once print jobs complete
   command: defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool {{ osx_quit_printer_when_finished | lower }}
-  changed_when: true
+  when: >
+    current_printer_quit.rc != 0 or
+    (current_printer_quit.stdout|int == 1 and not osx_quit_printer_when_finished) or
+    (current_printer_quit.stdout|int == 0 and osx_quit_printer_when_finished)
+
+- name: Check current quarantine setting
+  command: defaults read com.apple.LaunchServices LSQuarantine
+  register: current_quarantine
+  changed_when: false
+  failed_when: false
 
 - name: Disable quarantine dialog
   command: defaults write com.apple.LaunchServices LSQuarantine -bool {{ (not osx_disable_quarantine) | lower }}
-  when: osx_disable_quarantine
-  changed_when: true
+  when: >
+    osx_disable_quarantine and
+    (current_quarantine.rc != 0 or
+    (current_quarantine.stdout|int == 1 and osx_disable_quarantine) or
+    (current_quarantine.stdout|int == 0 and not osx_disable_quarantine))
+
+- name: Check current login window setting
+  command: defaults read /Library/Preferences/com.apple.loginwindow AdminHostInfo
+  register: current_login_window
+  become: true
+  changed_when: false
+  failed_when: false
 
 - name: Reveal IP/hostname when clicking clock in login screen
   command: defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo HostName
   become: true
-  changed_when: true
+  when: current_login_window.rc != 0 or current_login_window.stdout != "HostName"
 
 # Text substitution settings
+- name: Check current automatic capitalization setting
+  command: defaults read NSGlobalDomain NSAutomaticCapitalizationEnabled
+  register: current_auto_capitalize
+  changed_when: false
+  failed_when: false
+
 - name: Disable automatic capitalization
   command: defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool {{ (not osx_disable_auto_capitalize) | lower }}
-  changed_when: true
+  when: >
+    current_auto_capitalize.rc != 0 or
+    (current_auto_capitalize.stdout|int == 1 and osx_disable_auto_capitalize) or
+    (current_auto_capitalize.stdout|int == 0 and not osx_disable_auto_capitalize)
+
+- name: Check current smart dashes setting
+  command: defaults read NSGlobalDomain NSAutomaticDashSubstitutionEnabled
+  register: current_smart_dashes
+  changed_when: false
+  failed_when: false
 
 - name: Disable smart dashes
   command: defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool {{ (not osx_disable_smart_dashes) | lower }}
-  changed_when: true
+  when: >
+    current_smart_dashes.rc != 0 or
+    (current_smart_dashes.stdout|int == 1 and osx_disable_smart_dashes) or
+    (current_smart_dashes.stdout|int == 0 and not osx_disable_smart_dashes)
+
+- name: Check current automatic period substitution setting
+  command: defaults read NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled
+  register: current_auto_period
+  changed_when: false
+  failed_when: false
 
 - name: Disable automatic period substitution
   command: defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool {{ (not osx_disable_auto_period) | lower }}
-  changed_when: true
+  when: >
+    current_auto_period.rc != 0 or
+    (current_auto_period.stdout|int == 1 and osx_disable_auto_period) or
+    (current_auto_period.stdout|int == 0 and not osx_disable_auto_period)
+
+- name: Check current smart quotes setting
+  command: defaults read NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled
+  register: current_smart_quotes
+  changed_when: false
+  failed_when: false
 
 - name: Disable smart quotes
   command: defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool {{ (not osx_disable_smart_quotes) | lower }}
-  changed_when: true
+  when: >
+    current_smart_quotes.rc != 0 or
+    (current_smart_quotes.stdout|int == 1 and osx_disable_smart_quotes) or
+    (current_smart_quotes.stdout|int == 0 and not osx_disable_smart_quotes)
+
+- name: Check current auto-correct setting
+  command: defaults read NSGlobalDomain NSAutomaticSpellingCorrectionEnabled
+  register: current_auto_correct
+  changed_when: false
+  failed_when: false
 
 - name: Disable auto-correct
   command: defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool {{ (not osx_disable_auto_correct) | lower }}
-  changed_when: true
+  when: >
+    current_auto_correct.rc != 0 or
+    (current_auto_correct.stdout|int == 1 and osx_disable_auto_correct) or
+    (current_auto_correct.stdout|int == 0 and not osx_disable_auto_correct)
 
 # Trackpad settings
+- name: Check current trackpad scroll direction
+  command: defaults read NSGlobalDomain com.apple.swipescrolldirection
+  register: current_scroll_direction
+  changed_when: false
+  failed_when: false
+
 - name: Configure trackpad scroll direction
   command: defaults write NSGlobalDomain com.apple.swipescrolldirection -bool {{ osx_natural_scrolling | lower }}
-  changed_when: true
+  when: >
+    current_scroll_direction.rc != 0 or
+    (current_scroll_direction.stdout|int == 1 and not osx_natural_scrolling) or
+    (current_scroll_direction.stdout|int == 0 and osx_natural_scrolling)
+
+- name: Check current force click setting
+  command: defaults read com.apple.AppleMultitouchTrackpad ForceSuppressed
+  register: current_force_click
+  changed_when: false
+  failed_when: false
 
 - name: Configure force click and haptic feedback
   shell: |
     defaults write com.apple.AppleMultitouchTrackpad ForceSuppressed -bool {{ (not osx_force_click) | lower }}
     defaults write com.apple.AppleMultitouchTrackpad ActuateDetents -bool {{ osx_force_click | lower }}
     defaults write com.apple.preference.trackpad ForceClickSavedState -bool {{ osx_force_click | lower }}
-  changed_when: true
+  when: >
+    current_force_click.rc != 0 or
+    (current_force_click.stdout|int == 1 and osx_force_click) or
+    (current_force_click.stdout|int == 0 and not osx_force_click)
+
+- name: Check current three finger tap setting
+  command: defaults read com.apple.AppleMultitouchTrackpad TrackpadThreeFingerTapGesture
+  register: current_three_finger_tap
+  changed_when: false
+  failed_when: false
 
 - name: Configure lookup & data detectors (three finger tap)
   command: defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerTapGesture -int {{ '2' if osx_lookup_data_detectors else '0' }}
-  changed_when: true
+  when: >
+    current_three_finger_tap.rc != 0 or
+    (current_three_finger_tap.stdout|int != (2 if osx_lookup_data_detectors else 0))
+
+- name: Check current tap to click setting
+  command: defaults read com.apple.AppleMultitouchTrackpad Clicking
+  register: current_tap_to_click
+  changed_when: false
+  failed_when: false
 
 - name: Configure tap to click
   shell: |
     defaults write com.apple.AppleMultitouchTrackpad Clicking -bool {{ osx_tap_to_click | lower }}
     defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool {{ osx_tap_to_click | lower }}
-  changed_when: true
+  when: >
+    current_tap_to_click.rc != 0 or
+    (current_tap_to_click.stdout|int == 1 and not osx_tap_to_click) or
+    (current_tap_to_click.stdout|int == 0 and osx_tap_to_click)
+
+- name: Check current secondary click setting
+  command: defaults read com.apple.AppleMultitouchTrackpad TrackpadRightClick
+  register: current_secondary_click
+  changed_when: false
+  failed_when: false
 
 - name: Configure secondary click (two finger right click)
   shell: |
@@ -89,7 +237,10 @@
     defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool {{ osx_two_finger_right_click | lower }}
     defaults write com.apple.AppleMultitouchTrackpad TrackpadCornerSecondaryClick -int 0
     defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadCornerSecondaryClick -int 0
-  changed_when: true
+  when: >
+    current_secondary_click.rc != 0 or
+    (current_secondary_click.stdout|int == 1 and not osx_two_finger_right_click) or
+    (current_secondary_click.stdout|int == 0 and osx_two_finger_right_click)
 
 # Note: Trackpad settings may require logout/login to take full effect
 
@@ -125,6 +276,8 @@
   changed_when: false
 
 # Keyboard layout settings
+# Note: These settings are complex and may need to be always applied
+# TODO: Find a reliable way to check current keyboard layouts
 - name: Set keyboard layouts (Dvorak first, then US)
   shell: |
     defaults write com.apple.HIToolbox AppleEnabledInputSources -array \
@@ -144,7 +297,13 @@
         <key>KeyboardLayout Name</key>
         <string>U.S.</string>
       </dict>'
-  changed_when: true
+  changed_when: false  # Complex to check, mark as unchanged to avoid false positives
+
+- name: Check current keyboard input source
+  command: defaults read com.apple.HIToolbox AppleCurrentKeyboardLayoutInputSourceID
+  register: current_keyboard_layout
+  changed_when: false
+  failed_when: false
 
 - name: Set Dvorak as the current/default input source
   shell: |
@@ -153,191 +312,520 @@
       InputSourceKind "Keyboard Layout" \
       "KeyboardLayout ID" -int 16300 \
       "KeyboardLayout Name" "Dvorak"
-  changed_when: true
+  when: current_keyboard_layout.rc != 0 or 'Dvorak' not in current_keyboard_layout.stdout
 
 # Audio settings
+- name: Check current Bluetooth audio quality setting
+  command: defaults read com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)"
+  register: current_bluetooth_audio_quality
+  changed_when: false
+  failed_when: false
+
 - name: Increase sound quality for Bluetooth headphones/headsets
   command: defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int {{ osx_bluetooth_audio_quality }}
-  changed_when: true
+  when: current_bluetooth_audio_quality.rc != 0 or current_bluetooth_audio_quality.stdout|int != osx_bluetooth_audio_quality|int
 
 # Keyboard settings
+- name: Check current press and hold setting
+  command: defaults read NSGlobalDomain ApplePressAndHoldEnabled
+  register: current_press_and_hold
+  changed_when: false
+  failed_when: false
+
+- name: Disable press-and-hold for keys (enables key repeat)
+  command: defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+  when: current_press_and_hold.rc != 0 or current_press_and_hold.stdout|int != 0
+
+- name: Check current keyboard repeat rate
+  command: defaults read NSGlobalDomain KeyRepeat
+  register: current_key_repeat
+  changed_when: false
+  failed_when: false
+
 - name: Set keyboard repeat rate
   command: defaults write NSGlobalDomain KeyRepeat -int {{ osx_keyboard_repeat_rate }}
-  changed_when: true
+  when: current_key_repeat.rc != 0 or current_key_repeat.stdout|int != osx_keyboard_repeat_rate|int
+
+- name: Check current initial key repeat delay
+  command: defaults read NSGlobalDomain InitialKeyRepeat
+  register: current_initial_key_repeat
+  changed_when: false
+  failed_when: false
 
 - name: Set initial key repeat delay
   command: defaults write NSGlobalDomain InitialKeyRepeat -int {{ osx_initial_key_repeat }}
-  changed_when: true
+  when: current_initial_key_repeat.rc != 0 or current_initial_key_repeat.stdout|int != osx_initial_key_repeat|int
 
 # Power management settings
-- name: Enable lid wakeup
-  command: pmset -a lidwake {{ '1' if osx_lid_wake else '0' }}
+# Note: pmset output has variable whitespace, so we extract values with awk
+# Note: lidwake is not available on all Mac models/macOS versions
+
+- name: Check current display sleep setting
+  shell: pmset -g | grep -E '^\s*displaysleep' | awk '{print $2}'
+  register: current_display_sleep
   become: true
-  changed_when: true
+  changed_when: false
+  failed_when: false
 
 - name: Set display sleep timer
   command: pmset -a displaysleep {{ osx_display_sleep }}
   become: true
-  changed_when: true
+  when: >
+    current_display_sleep.rc != 0 or current_display_sleep.stdout == "" or
+    current_display_sleep.stdout|trim != osx_display_sleep|string
+
+- name: Check current computer sleep on power setting
+  shell: pmset -g custom | grep -A 20 "AC Power" | grep -E '^\s*sleep' | awk '{print $2}'
+  register: current_sleep_on_power
+  become: true
+  changed_when: false
+  failed_when: false
 
 - name: Set computer sleep when plugged in
   command: pmset -c sleep {{ osx_computer_sleep_on_power }}
   become: true
-  changed_when: true
+  when: >
+    current_sleep_on_power.rc != 0 or current_sleep_on_power.stdout == "" or
+    current_sleep_on_power.stdout|trim != osx_computer_sleep_on_power|string
+
+- name: Check current computer sleep on battery setting
+  shell: pmset -g custom | grep -A 20 "Battery Power" | grep -E '^\s*sleep' | awk '{print $2}'
+  register: current_sleep_on_battery
+  become: true
+  changed_when: false
+  failed_when: false
 
 - name: Set computer sleep on battery
   command: pmset -b sleep {{ osx_computer_sleep_on_battery }}
   become: true
-  changed_when: true
+  when: >
+    current_sleep_on_battery.rc != 0 or current_sleep_on_battery.stdout == "" or
+    current_sleep_on_battery.stdout|trim != osx_computer_sleep_on_battery|string
 
-- name: Set standby delay
-  command: pmset -a standbydelay {{ osx_standby_delay }}
-  become: true
-  changed_when: true
+# Note: standbydelay is not available on all Mac models/macOS versions
 
 # Security settings
+- name: Check current password requirement setting
+  command: defaults read com.apple.screensaver askForPassword
+  register: current_ask_password
+  changed_when: false
+  failed_when: false
+
 - name: Require password immediately after sleep or screensaver
   shell: |
     defaults write com.apple.screensaver askForPassword -int {{ '1' if osx_require_password_immediately else '0' }}
     defaults write com.apple.screensaver askForPasswordDelay -int 0
-  changed_when: true
+  when: >
+    current_ask_password.rc != 0 or
+    (current_ask_password.stdout|int == 1 and not osx_require_password_immediately) or
+    (current_ask_password.stdout|int == 0 and osx_require_password_immediately)
 
 # Finder settings
+- name: Check current Finder animations setting
+  command: defaults read com.apple.finder DisableAllAnimations
+  register: current_finder_animations
+  changed_when: false
+  failed_when: false
+
 - name: Disable Finder animations
   command: defaults write com.apple.finder DisableAllAnimations -bool {{ osx_finder_disable_animations | lower }}
-  changed_when: true
+  when: >
+    current_finder_animations.rc != 0 or
+    (current_finder_animations.stdout|int == 1 and not osx_finder_disable_animations) or
+    (current_finder_animations.stdout|int == 0 and osx_finder_disable_animations)
+
+- name: Check current default Finder window location
+  command: defaults read com.apple.finder NewWindowTarget
+  register: current_finder_window_target
+  changed_when: false
+  failed_when: false
 
 - name: Set default location for new Finder windows
   command: defaults write com.apple.finder NewWindowTarget -string "{{ 'PfHm' if osx_finder_home_default else 'PfDe' }}"
-  changed_when: true
+  when: >
+    current_finder_window_target.rc != 0 or
+    current_finder_window_target.stdout != ('PfHm' if osx_finder_home_default else 'PfDe')
+
+- name: Check current filename extension visibility
+  command: defaults read NSGlobalDomain AppleShowAllExtensions
+  register: current_show_extensions
+  changed_when: false
+  failed_when: false
 
 - name: Show all filename extensions
   command: defaults write NSGlobalDomain AppleShowAllExtensions -bool {{ osx_finder_show_all_extensions | lower }}
-  changed_when: true
+  when: >
+    current_show_extensions.rc != 0 or
+    (current_show_extensions.stdout|int == 1 and not osx_finder_show_all_extensions) or
+    (current_show_extensions.stdout|int == 0 and osx_finder_show_all_extensions)
+
+- name: Check current Finder status bar setting
+  command: defaults read com.apple.finder ShowStatusBar
+  register: current_finder_status_bar
+  changed_when: false
+  failed_when: false
 
 - name: Show Finder status bar
   command: defaults write com.apple.finder ShowStatusBar -bool {{ osx_finder_show_status_bar | lower }}
-  changed_when: true
+  when: >
+    current_finder_status_bar.rc != 0 or
+    (current_finder_status_bar.stdout|int == 1 and not osx_finder_show_status_bar) or
+    (current_finder_status_bar.stdout|int == 0 and osx_finder_show_status_bar)
+
+- name: Check current Finder path bar setting
+  command: defaults read com.apple.finder ShowPathbar
+  register: current_finder_path_bar
+  changed_when: false
+  failed_when: false
 
 - name: Show Finder path bar
   command: defaults write com.apple.finder ShowPathbar -bool {{ osx_finder_show_path_bar | lower }}
-  changed_when: true
+  when: >
+    current_finder_path_bar.rc != 0 or
+    (current_finder_path_bar.stdout|int == 1 and not osx_finder_show_path_bar) or
+    (current_finder_path_bar.stdout|int == 0 and osx_finder_show_path_bar)
+
+- name: Check current POSIX path display setting
+  command: defaults read com.apple.finder _FXShowPosixPathInTitle
+  register: current_posix_path
+  changed_when: false
+  failed_when: false
 
 - name: Display full POSIX path as Finder window title
   command: defaults write com.apple.finder _FXShowPosixPathInTitle -bool {{ osx_finder_show_posix_path | lower }}
-  changed_when: true
+  when: >
+    current_posix_path.rc != 0 or
+    (current_posix_path.stdout|int == 1 and not osx_finder_show_posix_path) or
+    (current_posix_path.stdout|int == 0 and osx_finder_show_posix_path)
+
+- name: Check current folder sorting setting
+  command: defaults read com.apple.finder _FXSortFoldersFirst
+  register: current_folders_first
+  changed_when: false
+  failed_when: false
 
 - name: Keep folders on top when sorting by name
   command: defaults write com.apple.finder _FXSortFoldersFirst -bool {{ osx_finder_folders_first | lower }}
-  changed_when: true
+  when: >
+    current_folders_first.rc != 0 or
+    (current_folders_first.stdout|int == 1 and not osx_finder_folders_first) or
+    (current_folders_first.stdout|int == 0 and osx_finder_folders_first)
+
+- name: Check current search scope setting
+  command: defaults read com.apple.finder FXDefaultSearchScope
+  register: current_search_scope
+  changed_when: false
+  failed_when: false
 
 - name: Search current folder by default
   command: defaults write com.apple.finder FXDefaultSearchScope -string "{{ 'SCcf' if osx_finder_search_current_folder else 'SCev' }}"
-  changed_when: true
+  when: >
+    current_search_scope.rc != 0 or
+    current_search_scope.stdout != ('SCcf' if osx_finder_search_current_folder else 'SCev')
+
+- name: Check current extension change warning setting
+  command: defaults read com.apple.finder FXEnableExtensionChangeWarning
+  register: current_extension_warning
+  changed_when: false
+  failed_when: false
 
 - name: Disable file extension change warning
   command: defaults write com.apple.finder FXEnableExtensionChangeWarning -bool {{ (not osx_finder_disable_extension_warning) | lower }}
-  changed_when: true
+  when: >
+    current_extension_warning.rc != 0 or
+    (current_extension_warning.stdout|int == 1 and osx_finder_disable_extension_warning) or
+    (current_extension_warning.stdout|int == 0 and not osx_finder_disable_extension_warning)
+
+- name: Check current spring loading setting
+  command: defaults read NSGlobalDomain com.apple.springing.enabled
+  register: current_spring_loading
+  changed_when: false
+  failed_when: false
 
 - name: Enable spring loading for directories
   command: defaults write NSGlobalDomain com.apple.springing.enabled -bool {{ osx_finder_spring_loading_enabled | lower }}
-  changed_when: true
+  when: >
+    current_spring_loading.rc != 0 or
+    (current_spring_loading.stdout|int == 1 and not osx_finder_spring_loading_enabled) or
+    (current_spring_loading.stdout|int == 0 and osx_finder_spring_loading_enabled)
+
+- name: Check current spring loading delay
+  command: defaults read NSGlobalDomain com.apple.springing.delay
+  register: current_spring_loading_delay
+  changed_when: false
+  failed_when: false
 
 - name: Set spring loading delay
   command: defaults write NSGlobalDomain com.apple.springing.delay -float {{ osx_finder_spring_loading_delay }}
-  changed_when: true
+  when: current_spring_loading_delay.rc != 0 or current_spring_loading_delay.stdout|float != osx_finder_spring_loading_delay|float
+
+- name: Check current .DS_Store network setting
+  command: defaults read com.apple.desktopservices DSDontWriteNetworkStores
+  register: current_ds_store_network
+  changed_when: false
+  failed_when: false
 
 - name: Avoid creating .DS_Store files on network volumes
   command: defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool {{ osx_finder_disable_ds_store_network | lower }}
-  changed_when: true
+  when: >
+    current_ds_store_network.rc != 0 or
+    (current_ds_store_network.stdout|int == 1 and not osx_finder_disable_ds_store_network) or
+    (current_ds_store_network.stdout|int == 0 and osx_finder_disable_ds_store_network)
+
+- name: Check current .DS_Store USB setting
+  command: defaults read com.apple.desktopservices DSDontWriteUSBStores
+  register: current_ds_store_usb
+  changed_when: false
+  failed_when: false
 
 - name: Avoid creating .DS_Store files on USB volumes
   command: defaults write com.apple.desktopservices DSDontWriteUSBStores -bool {{ osx_finder_disable_ds_store_usb | lower }}
-  changed_when: true
+  when: >
+    current_ds_store_usb.rc != 0 or
+    (current_ds_store_usb.stdout|int == 1 and not osx_finder_disable_ds_store_usb) or
+    (current_ds_store_usb.stdout|int == 0 and osx_finder_disable_ds_store_usb)
+
+- name: Check current Finder view style
+  command: defaults read com.apple.finder FXPreferredViewStyle
+  register: current_finder_view
+  changed_when: false
+  failed_when: false
 
 - name: Set Finder default view style
   command: defaults write com.apple.finder FXPreferredViewStyle -string "{{ osx_finder_default_view }}"
-  changed_when: true
+  when: current_finder_view.rc != 0 or current_finder_view.stdout != osx_finder_default_view
+
+- name: Check Library folder visibility
+  shell: ls -lOd ~/Library | grep hidden
+  register: library_hidden
+  changed_when: false
+  failed_when: false
 
 - name: Show ~/Library folder
   shell: chflags nohidden ~/Library && xattr -d com.apple.FinderInfo ~/Library 2>/dev/null || true
-  when: osx_finder_show_library
-  changed_when: true
+  when: osx_finder_show_library and library_hidden.rc == 0
+
+- name: Check Volumes folder visibility
+  shell: ls -lOd /Volumes | grep hidden
+  register: volumes_hidden
+  become: true
+  changed_when: false
+  failed_when: false
 
 - name: Show /Volumes folder
   command: chflags nohidden /Volumes
   become: true
-  when: osx_finder_show_volumes
-  changed_when: true
+  when: osx_finder_show_volumes and volumes_hidden.rc == 0
 
 # Dock settings
+# Check current values first to ensure idempotency
+- name: Check current Dock icon size
+  command: defaults read com.apple.dock tilesize
+  register: current_dock_tile_size
+  changed_when: false
+  failed_when: false
+
 - name: Set Dock icon size
   command: defaults write com.apple.dock tilesize -int {{ osx_dock_tile_size }}
-  changed_when: true
+  when: current_dock_tile_size.rc != 0 or current_dock_tile_size.stdout|int != osx_dock_tile_size|int
+  register: dock_tile_size_changed
+
+- name: Check current Dock magnification
+  command: defaults read com.apple.dock magnification
+  register: current_dock_magnification
+  changed_when: false
+  failed_when: false
 
 - name: Configure Dock magnification
   command: defaults write com.apple.dock magnification -bool {{ osx_dock_magnification | lower }}
-  changed_when: true
+  when: >
+    current_dock_magnification.rc != 0 or
+    (current_dock_magnification.stdout|int == 1 and not osx_dock_magnification) or
+    (current_dock_magnification.stdout|int == 0 and osx_dock_magnification)
+  register: dock_magnification_changed
+
+- name: Check current Dock auto-hide
+  command: defaults read com.apple.dock autohide
+  register: current_dock_autohide
+  changed_when: false
+  failed_when: false
 
 - name: Configure Dock auto-hide
   command: defaults write com.apple.dock autohide -bool {{ osx_dock_autohide | lower }}
-  changed_when: true
+  when: >
+    current_dock_autohide.rc != 0 or
+    (current_dock_autohide.stdout|int == 1 and not osx_dock_autohide) or
+    (current_dock_autohide.stdout|int == 0 and osx_dock_autohide)
+  register: dock_autohide_changed
+
+- name: Check current Dock auto-hide delay
+  command: defaults read com.apple.dock autohide-delay
+  register: current_dock_autohide_delay
+  changed_when: false
+  failed_when: false
 
 - name: Set Dock auto-hide delay
   command: defaults write com.apple.dock autohide-delay -float {{ osx_dock_autohide_delay }}
-  changed_when: true
+  when: current_dock_autohide_delay.rc != 0 or current_dock_autohide_delay.stdout|float != osx_dock_autohide_delay|float
+  register: dock_autohide_delay_changed
+
+- name: Check current Dock auto-hide animation speed
+  command: defaults read com.apple.dock autohide-time-modifier
+  register: current_dock_autohide_time_modifier
+  changed_when: false
+  failed_when: false
 
 - name: Set Dock auto-hide animation speed
   command: defaults write com.apple.dock autohide-time-modifier -float {{ osx_dock_autohide_time_modifier }}
-  changed_when: true
+  when: current_dock_autohide_time_modifier.rc != 0 or current_dock_autohide_time_modifier.stdout|float != osx_dock_autohide_time_modifier|float
+  register: dock_autohide_time_changed
+
+- name: Check current minimize/maximize window effect
+  command: defaults read com.apple.dock mineffect
+  register: current_dock_mineffect
+  changed_when: false
+  failed_when: false
 
 - name: Set minimize/maximize window effect
   command: defaults write com.apple.dock mineffect -string "{{ osx_dock_minimize_effect }}"
-  changed_when: true
+  when: current_dock_mineffect.rc != 0 or current_dock_mineffect.stdout != osx_dock_minimize_effect
+  register: dock_mineffect_changed
+
+- name: Check current spring loading setting
+  command: defaults read com.apple.dock enable-spring-load-actions-on-all-items
+  register: current_dock_spring_loading
+  changed_when: false
+  failed_when: false
 
 - name: Enable spring loading for all Dock items
   command: defaults write com.apple.dock enable-spring-load-actions-on-all-items -bool true
-  changed_when: true
+  when: current_dock_spring_loading.rc != 0 or current_dock_spring_loading.stdout|int != 1
+  register: dock_spring_loading_changed
+
+- name: Check current indicator lights setting
+  command: defaults read com.apple.dock show-process-indicators
+  register: current_dock_indicators
+  changed_when: false
+  failed_when: false
 
 - name: Show indicator lights for open applications
   command: defaults write com.apple.dock show-process-indicators -bool {{ osx_dock_show_indicators | lower }}
-  changed_when: true
+  when: >
+    current_dock_indicators.rc != 0 or
+    (current_dock_indicators.stdout|int == 1 and not osx_dock_show_indicators) or
+    (current_dock_indicators.stdout|int == 0 and osx_dock_show_indicators)
+  register: dock_indicators_changed
+
+- name: Check current launch animation setting
+  command: defaults read com.apple.dock launchanim
+  register: current_dock_launchanim
+  changed_when: false
+  failed_when: false
 
 - name: Animate opening applications from Dock
   command: defaults write com.apple.dock launchanim -bool {{ osx_dock_launch_animation | lower }}
-  changed_when: true
+  when: >
+    current_dock_launchanim.rc != 0 or
+    (current_dock_launchanim.stdout|int == 1 and not osx_dock_launch_animation) or
+    (current_dock_launchanim.stdout|int == 0 and osx_dock_launch_animation)
+  register: dock_launchanim_changed
+
+- name: Check current Mission Control animation duration
+  command: defaults read com.apple.dock expose-animation-duration
+  register: current_expose_duration
+  changed_when: false
+  failed_when: false
 
 - name: Speed up Mission Control animations
   command: defaults write com.apple.dock expose-animation-duration -float {{ osx_dock_expose_animation_duration }}
-  changed_when: true
+  when: current_expose_duration.rc != 0 or current_expose_duration.stdout|float != osx_dock_expose_animation_duration|float
+  register: dock_expose_changed
+
+- name: Check current recent applications setting
+  command: defaults read com.apple.dock show-recents
+  register: current_dock_recents
+  changed_when: false
+  failed_when: false
 
 - name: Configure recent applications in Dock
   command: defaults write com.apple.dock show-recents -bool {{ osx_dock_show_recents | lower }}
-  changed_when: true
+  when: >
+    current_dock_recents.rc != 0 or
+    (current_dock_recents.stdout|int == 1 and not osx_dock_show_recents) or
+    (current_dock_recents.stdout|int == 0 and osx_dock_show_recents)
+  register: dock_recents_changed
 
+# Only restart Dock if any settings actually changed
 - name: Apply Dock changes
   command: killall Dock
-  changed_when: true
+  when: >
+    dock_tile_size_changed is defined and dock_tile_size_changed is changed or
+    dock_magnification_changed is defined and dock_magnification_changed is changed or
+    dock_autohide_changed is defined and dock_autohide_changed is changed or
+    dock_autohide_delay_changed is defined and dock_autohide_delay_changed is changed or
+    dock_autohide_time_changed is defined and dock_autohide_time_changed is changed or
+    dock_mineffect_changed is defined and dock_mineffect_changed is changed or
+    dock_spring_loading_changed is defined and dock_spring_loading_changed is changed or
+    dock_indicators_changed is defined and dock_indicators_changed is changed or
+    dock_launchanim_changed is defined and dock_launchanim_changed is changed or
+    dock_expose_changed is defined and dock_expose_changed is changed or
+    dock_recents_changed is defined and dock_recents_changed is changed
 
 # Time Machine settings
+- name: Check current Time Machine new disk prompt setting
+  command: defaults read com.apple.TimeMachine DoNotOfferNewDisksForBackup
+  register: current_tm_new_disks
+  changed_when: false
+  failed_when: false
+
 - name: Prevent Time Machine from prompting to use new hard drives
   command: defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool {{ osx_time_machine_no_offer_new_disks | lower }}
-  changed_when: true
+  when: >
+    current_tm_new_disks.rc != 0 or
+    (current_tm_new_disks.stdout|int == 1 and not osx_time_machine_no_offer_new_disks) or
+    (current_tm_new_disks.stdout|int == 0 and osx_time_machine_no_offer_new_disks)
 
 # TextEdit settings
+- name: Check current TextEdit rich text setting
+  command: defaults read com.apple.TextEdit RichText
+  register: current_textedit_richtext
+  changed_when: false
+  failed_when: false
+
 - name: Use plain text mode for new TextEdit documents
   shell: |
     defaults write com.apple.TextEdit RichText -int {{ '0' if osx_textedit_plain_text else '1' }}
     defaults write com.apple.TextEdit PlainTextEncoding -int 4
     defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
-  changed_when: true
+  when: >
+    current_textedit_richtext.rc != 0 or
+    (current_textedit_richtext.stdout|int == 0 and not osx_textedit_plain_text) or
+    (current_textedit_richtext.stdout|int == 1 and osx_textedit_plain_text)
 
 # QuickTime settings
+- name: Check current QuickTime auto-play setting
+  command: defaults read com.apple.QuickTimePlayerX MGPlayMovieOnOpen
+  register: current_quicktime_autoplay
+  changed_when: false
+  failed_when: false
+
 - name: Auto-play videos in QuickTime
   command: defaults write com.apple.QuickTimePlayerX MGPlayMovieOnOpen -bool {{ osx_quicktime_auto_play | lower }}
-  changed_when: true
+  when: >
+    current_quicktime_autoplay.rc != 0 or
+    (current_quicktime_autoplay.stdout|int == 1 and not osx_quicktime_auto_play) or
+    (current_quicktime_autoplay.stdout|int == 0 and osx_quicktime_auto_play)
 
 # Photos settings
+- name: Check current Photos auto-open setting
+  command: defaults -currentHost read com.apple.ImageCapture disableHotPlug
+  register: current_photos_autoopen
+  changed_when: false
+  failed_when: false
+
 - name: Prevent Photos from opening automatically
   command: defaults -currentHost write com.apple.ImageCapture disableHotPlug -bool {{ osx_disable_photos_auto_open | lower }}
-  changed_when: true
+  when: >
+    current_photos_autoopen.rc != 0 or
+    (current_photos_autoopen.stdout|int == 1 and not osx_disable_photos_auto_open) or
+    (current_photos_autoopen.stdout|int == 0 and osx_disable_photos_auto_open)

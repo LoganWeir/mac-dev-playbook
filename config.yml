@@ -21,6 +21,7 @@ homebrew_installed_packages:
   - pyenv
   - fnm
   - openvpn
+  - mongosh
 
 homebrew_cask_apps:
   - docker

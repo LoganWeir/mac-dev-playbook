@@ -23,8 +23,8 @@ osx_disable_smart_quotes: true # Disable smart quotes
 osx_disable_auto_period: true # Disable automatic period substitution
 
 # macOS keyboard settings
-osx_keyboard_repeat_rate: 1 # Keyboard repeat rate (1 = fastest)
-osx_initial_key_repeat: 10 # Initial key repeat delay (10 = shortest)
+osx_keyboard_repeat_rate: 2 # Keyboard repeat rate (1 = fastest)
+osx_initial_key_repeat: 20 # Initial key repeat delay (10 = shortest)
 
 # macOS Finder settings
 osx_finder_home_default: true # Set Home as default location for new Finder windows

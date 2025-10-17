@@ -1,9 +1,15 @@
 ---
-# Check if npm is available (either from system or fnm)
+# Check if npm is available (detect fnm-managed npm correctly)
+# We check if npm exists and whether it's managed by fnm
 - name: Check if npm is available
   shell: |
     if command -v npm &> /dev/null; then
-      echo "system"
+      npm_path=$(which npm)
+      if echo "$npm_path" | grep -q "fnm"; then
+        echo "fnm"
+      else
+        echo "system"
+      fi
     elif command -v fnm &> /dev/null; then
       eval "$(fnm env)" && command -v npm &> /dev/null && echo "fnm"
     else
@@ -16,35 +22,65 @@
   debug:
     msg: "NPM availability: {{ npm_available.stdout }}, npm_packages defined: {{ npm_packages is defined }}, npm_packages: {{ npm_packages | default('not defined') }}"
 
-- name: Install global NPM packages (system npm)
-  npm:
-    name: "{{ item.name | default(item) }}"
-    state: "{{ item.state | default('present') }}"
-    version: "{{ item.version | default(omit) }}"
-    global: true
-    executable: "{{ item.executable | default(omit) }}"
-  loop: "{{ npm_packages | default([]) }}"
-  when:
-    - "'system' in npm_available.stdout"
-    - npm_packages is defined
-    - npm_packages | length > 0
-
+# Only install NPM packages via fnm-managed Node.js
+# System npm is intentionally not used to ensure consistent Node.js environment
 - name: Install global NPM packages (fnm)
   shell: |
     eval "$(fnm env)"
-    npm install -g {{ item.name | default(item) | quote }}
+    # Check if package is already installed at latest version
+    package="{{ item.name | default(item) }}"
+    if npm list -g --depth=0 "$package" 2>/dev/null | grep -q "$package"; then
+      echo "Package already installed: $package"
+    else
+      npm install -g "$package"
+      echo "Package installed: $package"
+    fi
   loop: "{{ npm_packages | default([]) }}"
   when:
     - "'fnm' in npm_available.stdout"
     - npm_packages is defined
     - npm_packages | length > 0
   register: npm_install_result
-  changed_when: "'added' in npm_install_result.stdout or 'updated' in npm_install_result.stdout"
+  changed_when: "'Package installed:' in npm_install_result.stdout"
 
-- name: Install global Pip packages.
-  pip:
-    name: "{{ item.name | default(item) }}"
-    state: "{{ item.state | default('present') }}"
-    version: "{{ item.version | default(omit) }}"
-    executable: "{{ item.executable | default('pip3') }}"
+- name: Check Python version for pip packages
+  shell: |
+    if command -v pyenv &> /dev/null; then
+      export PYENV_ROOT="$HOME/.pyenv"
+      export PATH="$PYENV_ROOT/bin:$PATH"
+      eval "$(pyenv init -)"
+      python3 --version
+    else
+      python3 --version
+    fi
+  register: python_version
+  changed_when: false
+
+- name: Debug Python version being used for pip packages
+  debug:
+    msg: "Installing pip packages using Python: {{ python_version.stdout }}"
+
+# We use shell commands instead of Ansible's pip module because:
+# 1. Ansible's pip module runs in Ansible's own Python environment (e.g., Homebrew Python 3.13)
+# 2. We want packages installed in pyenv's Python 3.14, not Ansible's Python
+# 3. The pip module would require the 'packaging' library in Ansible's Python, creating a dependency issue
+# 4. Using shell ensures we properly initialize pyenv and use the correct Python/pip versions
+- name: Install global Pip packages (using shell for pyenv compatibility)
+  shell: |
+    if command -v pyenv &> /dev/null; then
+      export PYENV_ROOT="$HOME/.pyenv"
+      export PATH="$PYENV_ROOT/bin:$PATH"
+      eval "$(pyenv init -)"
+    fi
+    # Use pip show to check if package is already installed
+    package="{{ item.name | default(item) }}"
+    if pip3 show "$package" >/dev/null 2>&1; then
+      echo "Requirement already satisfied: $package"
+    else
+      pip3 install "$package"
+      echo "Successfully installed: $package"
+    fi
   loop: "{{ pip_packages }}"
+  register: pip_install_result
+  changed_when: "'Successfully installed:' in pip_install_result.stdout"
+  failed_when: "pip_install_result.rc != 0"

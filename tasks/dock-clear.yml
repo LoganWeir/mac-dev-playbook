@@ -11,9 +11,10 @@
   when:
     - dockitems_remove_all | default(false)
     - dock_items.stdout_lines | length > 2  # Keep only if more than Finder and Trash
-  changed_when: true
+  register: dock_items_removed
 
 - name: Restart Dock to apply changes
   command: killall Dock
-  when: dockitems_remove_all | default(false)
-  changed_when: true
+  when:
+    - dockitems_remove_all | default(false)
+    - dock_items_removed is changed
